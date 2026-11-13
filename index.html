@@ -28,7 +28,6 @@
 
 <script>
 const USER = "jonmiraen72";
-// 현재 웹페이지 URL에서 저장소 이름을 자동으로 가져옵니다 (예: RT-100-1, RT-70-3 등)
 const REPO = location.pathname.split('/')[1] || "RT-100-1";
 const API_BASE = `https://api.github.com/repos/${USER}/${REPO}/contents`;
 
@@ -36,7 +35,6 @@ let currentTracks = [];
 let currentIndex = -1;
 const audio = document.getElementById("audioPlayer");
 
-// 페이지 제목과 상단 타이틀을 현재 교재 이름으로 자동 설정
 document.title = `${REPO} Audio Player`;
 document.getElementById("title").innerText = `${REPO} 음원 목록`;
 
@@ -48,13 +46,20 @@ audio.addEventListener("ended", () => {
 
 async function loadFolders() {
   document.getElementById("playerBox").style.display = "none";
-  // '단원 선택' 대신 'Unit 선택'으로 변경
   document.getElementById("title").innerText = `${REPO} Unit 선택`;
   
   try {
     const res = await fetch(API_BASE);
     const items = await res.json();
     const folders = items.filter(item => item.type === "dir");
+    
+    // 폴더 이름에서 숫자를 정확하게 추출하여 오름차순(1, 2, 3... 6, 7...)으로 정렬합니다.
+    folders.sort((a, b) => {
+      const numA = parseInt(a.name.replace(/[^0-9]/g, '')) || 0;
+      const numB = parseInt(b.name.replace(/[^0-9]/g, '')) || 0;
+      if (numA !== numB) return numA - numB;
+      return a.name.localeCompare(b.name);
+    });
     
     let html = "";
     folders.forEach(f => {
@@ -76,9 +81,17 @@ async function loadTracks(encodedPath, folderName) {
     const res = await fetch(`${API_BASE}/${encodedPath}`);
     const items = await res.json();
     currentTracks = items.filter(item => item.name.toLowerCase().endsWith(".mp3"));
+    
+    // 트랙 파일들도 숫자를 기준으로 올바르게 정렬합니다.
+    currentTracks.sort((a, b) => {
+      const numA = parseInt(a.name.replace(/[^0-9]/g, '')) || 0;
+      const numB = parseInt(b.name.replace(/[^0-9]/g, '')) || 0;
+      if (numA !== numB) return numA - numB;
+      return a.name.localeCompare(b.name);
+    });
+
     currentIndex = -1;
 
-    // '단원 목록으로' 대신 'Unit 목록으로'로 변경
     let html = `<button class="back-btn" onclick="loadFolders()">← Unit 목록으로</button><div class="track-list">`;
     currentTracks.forEach((t, idx) => {
       const safeTrackName = t.name.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
