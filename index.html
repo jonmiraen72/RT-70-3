@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RT-100-1 Audio Player</title>
+<title>Audio Player</title>
 <style>
   body { font-family: 'Malgun Gothic', sans-serif; max-width: 650px; margin: 20px auto; padding: 0 15px; background: #f8f9fa; }
   h2 { color: #222; border-bottom: 2px solid #0066cc; padding-bottom: 8px; }
@@ -19,7 +19,7 @@
 </head>
 <body>
 
-<h2 id="title">RT-100-1 음원 목록</h2>
+<h2 id="title">음원 목록</h2>
 <div class="player-box" id="playerBox" style="display:none;">
   <div id="nowPlaying" style="font-weight:bold; font-size:14px;">재생할 트랙을 선택하세요</div>
   <audio id="audioPlayer" controls></audio>
@@ -28,12 +28,17 @@
 
 <script>
 const USER = "jonmiraen72";
-const REPO = "RT-100-1";
+// 현재 웹페이지 URL에서 저장소 이름을 자동으로 가져옵니다 (예: RT-100-1, RT-70-3 등)
+const REPO = location.pathname.split('/')[1] || "RT-100-1";
 const API_BASE = `https://api.github.com/repos/${USER}/${REPO}/contents`;
 
 let currentTracks = [];
 let currentIndex = -1;
 const audio = document.getElementById("audioPlayer");
+
+// 페이지 제목과 상단 타이틀을 현재 교재 이름으로 자동 설정
+document.title = `${REPO} Audio Player`;
+document.getElementById("title").innerText = `${REPO} 음원 목록`;
 
 audio.addEventListener("ended", () => {
   if (currentIndex + 1 < currentTracks.length) {
@@ -44,36 +49,45 @@ audio.addEventListener("ended", () => {
 async function loadFolders() {
   document.getElementById("playerBox").style.display = "none";
   document.getElementById("title").innerText = `${REPO} 단원 선택`;
-  const res = await fetch(API_BASE);
-  const items = await res.json();
-  const folders = items.filter(item => item.type === "dir");
   
-  let html = "";
-  folders.forEach(f => {
-    // 특수문자 및 작은따옴표 오류 방지 처리
-    const safePath = encodeURIComponent(f.path);
-    const safeName = f.name.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-    html += `<button class="folder-btn" onclick="loadTracks('${safePath}', '${safeName}')">📁 ${f.name}</button>`;
-  });
-  document.getElementById("content").innerHTML = html || "폴더가 없습니다.";
+  try {
+    const res = await fetch(API_BASE);
+    const items = await res.json();
+    const folders = items.filter(item => item.type === "dir");
+    
+    let html = "";
+    folders.forEach(f => {
+      const safePath = encodeURIComponent(f.path);
+      const safeName = f.name.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+      html += `<button class="folder-btn" onclick="loadTracks('${safePath}', '${safeName}')">📁 ${f.name}</button>`;
+    });
+    document.getElementById("content").innerHTML = html || "폴더가 없습니다.";
+  } catch (err) {
+    document.getElementById("content").innerHTML = "데이터를 불러오는 중 오류가 발생했습니다.";
+  }
 }
 
 async function loadTracks(encodedPath, folderName) {
   document.getElementById("title").innerText = folderName;
   document.getElementById("content").innerHTML = "음원 불러오는 중...";
-  const res = await fetch(`${API_BASE}/${encodedPath}`);
-  const items = await res.json();
-  currentTracks = items.filter(item => item.name.toLowerCase().endsWith(".mp3"));
-  currentIndex = -1;
+  
+  try {
+    const res = await fetch(`${API_BASE}/${encodedPath}`);
+    const items = await res.json();
+    currentTracks = items.filter(item => item.name.toLowerCase().endsWith(".mp3"));
+    currentIndex = -1;
 
-  let html = `<button class="back-btn" onclick="loadFolders()">← 단원 목록으로</button><div class="track-list">`;
-  currentTracks.forEach((t, idx) => {
-    const safeTrackName = t.name.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-    html += `<div class="track-item" id="track-${idx}" onclick="playTrack(${idx})"><span>🎵 ${safeTrackName}</span><span>▶</span></div>`;
-  });
-  html += `</div>`;
-  document.getElementById("content").innerHTML = html;
-  document.getElementById("playerBox").style.display = "block";
+    let html = `<button class="back-btn" onclick="loadFolders()">← 단원 목록으로</button><div class="track-list">`;
+    currentTracks.forEach((t, idx) => {
+      const safeTrackName = t.name.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+      html += `<div class="track-item" id="track-${idx}" onclick="playTrack(${idx})"><span>🎵 ${safeTrackName}</span><span>▶</span></div>`;
+    });
+    html += `</div>`;
+    document.getElementById("content").innerHTML = html;
+    document.getElementById("playerBox").style.display = "block";
+  } catch (err) {
+    document.getElementById("content").innerHTML = "음원 목록을 불러오는 중 오류가 발생했습니다.";
+  }
 }
 
 function playTrack(idx) {
