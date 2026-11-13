@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RT-100-1 Audio Player</title>
+<style>
+  body { font-family: 'Malgun Gothic', sans-serif; max-width: 650px; margin: 20px auto; padding: 0 15px; background: #f8f9fa; }
+  h2 { color: #222; border-bottom: 2px solid #0066cc; padding-bottom: 8px; }
+  .folder-btn { display: block; width: 100%; text-align: left; padding: 14px; margin: 8px 0; background: #fff; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; }
+  .folder-btn:hover { background: #eef5ff; border-color: #0066cc; }
+  .track-list { margin-top: 15px; }
+  .track-item { display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 12px 14px; margin: 6px 0; border-radius: 6px; border: 1px solid #e0e0e0; cursor: pointer; }
+  .track-item.active { background: #0066cc; color: #fff; font-weight: bold; }
+  .player-box { position: sticky; top: 0; background: #fff; padding: 12px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 15px; z-index: 10; }
+  audio { width: 100%; margin-top: 8px; }
+  .back-btn { background: #555; color: #fff; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; margin-bottom: 10px; }
+</style>
+</head>
+<body>
+
+<h2 id="title">RT-100-1 음원 목록</h2>
+<div class="player-box" id="playerBox" style="display:none;">
+  <div id="nowPlaying" style="font-weight:bold; font-size:14px;">재생할 트랙을 선택하세요</div>
+  <audio id="audioPlayer" controls></audio>
+</div>
+<div id="content">불러오는 중...</div>
+
+<script>
+const USER = "jonmiraen72";
+const REPO = "RT-100-1";
+const API_BASE = `https://api.github.com/repos/${USER}/${REPO}/contents`;
+
+let currentTracks = [];
+let currentIndex = -1;
+const audio = document.getElementById("audioPlayer");
+
+audio.addEventListener("ended", () => {
+  if (currentIndex + 1 < currentTracks.length) {
+    playTrack(currentIndex + 1);
+  }
+});
+
+async function loadFolders() {
+  document.getElementById("playerBox").style.display = "none";
+  document.getElementById("title").innerText = `${REPO} 단원 선택`;
+  const res = await fetch(API_BASE);
+  const items = await res.json();
+  const folders = items.filter(item => item.type === "dir");
+  
+  let html = "";
+  folders.forEach(f => {
+    // 특수문자 및 작은따옴표 오류 방지 처리
+    const safePath = encodeURIComponent(f.path);
+    const safeName = f.name.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    html += `<button class="folder-btn" onclick="loadTracks('${safePath}', '${safeName}')">📁 ${f.name}</button>`;
+  });
+  document.getElementById("content").innerHTML = html || "폴더가 없습니다.";
+}
+
+async function loadTracks(encodedPath, folderName) {
+  document.getElementById("title").innerText = folderName;
+  document.getElementById("content").innerHTML = "음원 불러오는 중...";
+  const res = await fetch(`${API_BASE}/${encodedPath}`);
+  const items = await res.json();
+  currentTracks = items.filter(item => item.name.toLowerCase().endsWith(".mp3"));
+  currentIndex = -1;
+
+  let html = `<button class="back-btn" onclick="loadFolders()">← 단원 목록으로</button><div class="track-list">`;
+  currentTracks.forEach((t, idx) => {
+    const safeTrackName = t.name.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    html += `<div class="track-item" id="track-${idx}" onclick="playTrack(${idx})"><span>🎵 ${safeTrackName}</span><span>▶</span></div>`;
+  });
+  html += `</div>`;
+  document.getElementById("content").innerHTML = html;
+  document.getElementById("playerBox").style.display = "block";
+}
+
+function playTrack(idx) {
+  currentIndex = idx;
+  document.querySelectorAll(".track-item").forEach(el => el.classList.remove("active"));
+  const activeEl = document.getElementById(`track-${idx}`);
+  if (activeEl) activeEl.classList.add("active");
+  
+  const track = currentTracks[idx];
+  document.getElementById("nowPlaying").innerText = `재생 중: ${track.name}`;
+  audio.src = track.download_url;
+  audio.play();
+}
+
+loadFolders();
+</script>
+</body>
+</html>
