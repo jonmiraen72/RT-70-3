@@ -3,7 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Audio Player</title>
+<!-- 카카오톡 미리보기 및 브라우저 탭 제목 설정 -->
+<meta property="og:title" content="RT-70-3 MP3">
+<meta property="og:description" content="클릭하여 교재 음원을 재생하세요">
+<title>RT-70-3 MP3</title>
 <style>
   body { font-family: 'Malgun Gothic', sans-serif; max-width: 650px; margin: 20px auto; padding: 0 15px; background: #f8f9fa; }
   h2 { color: #222; border-bottom: 2px solid #0066cc; padding-bottom: 8px; }
@@ -28,14 +31,13 @@
 
 <script>
 const USER = "jonmiraen72";
-const REPO = location.pathname.split('/')[1] || "RT-100-1";
+const REPO = location.pathname.split('/')[1] || "RT-70-3";
 const API_BASE = `https://api.github.com/repos/${USER}/${REPO}/contents`;
 
 let currentTracks = [];
 let currentIndex = -1;
 const audio = document.getElementById("audioPlayer");
 
-document.title = `${REPO} Audio Player`;
 document.getElementById("title").innerText = `${REPO} 음원 목록`;
 
 audio.addEventListener("ended", () => {
@@ -127,3 +129,4 @@ loadFolders();
 </script>
 </body>
 </html>
+```[cite: 7]
