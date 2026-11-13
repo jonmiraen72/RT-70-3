@@ -53,10 +53,13 @@ async function loadFolders() {
     const items = await res.json();
     const folders = items.filter(item => item.type === "dir");
     
-    // 폴더 이름에서 숫자를 정확하게 추출하여 오름차순(1, 2, 3... 6, 7...)으로 정렬합니다.
+    // 폴더 이름에서 첫 번째로 나오는 숫자만 정확하게 추출하여 오름차순 정렬합니다.
     folders.sort((a, b) => {
-      const numA = parseInt(a.name.replace(/[^0-9]/g, '')) || 0;
-      const numB = parseInt(b.name.replace(/[^0-9]/g, '')) || 0;
+      const matchA = a.name.match(/(\d+)/);
+      const matchB = b.name.match(/(\d+)/);
+      const numA = matchA ? parseInt(matchA[1]) : 0;
+      const numB = matchB ? parseInt(matchB[1]) : 0;
+      
       if (numA !== numB) return numA - numB;
       return a.name.localeCompare(b.name);
     });
@@ -82,10 +85,13 @@ async function loadTracks(encodedPath, folderName) {
     const items = await res.json();
     currentTracks = items.filter(item => item.name.toLowerCase().endsWith(".mp3"));
     
-    // 트랙 파일들도 숫자를 기준으로 올바르게 정렬합니다.
+    // 트랙 파일들도 첫 번째 숫자를 기준으로 올바르게 정렬합니다.
     currentTracks.sort((a, b) => {
-      const numA = parseInt(a.name.replace(/[^0-9]/g, '')) || 0;
-      const numB = parseInt(b.name.replace(/[^0-9]/g, '')) || 0;
+      const matchA = a.name.match(/(\d+)/);
+      const matchB = b.name.match(/(\d+)/);
+      const numA = matchA ? parseInt(matchA[1]) : 0;
+      const numB = matchB ? parseInt(matchB[1]) : 0;
+      
       if (numA !== numB) return numA - numB;
       return a.name.localeCompare(b.name);
     });
