@@ -48,7 +48,8 @@ audio.addEventListener("ended", () => {
 
 async function loadFolders() {
   document.getElementById("playerBox").style.display = "none";
-  document.getElementById("title").innerText = `${REPO} 단원 선택`;
+  // '단원 선택' 대신 'Unit 선택'으로 변경
+  document.getElementById("title").innerText = `${REPO} Unit 선택`;
   
   try {
     const res = await fetch(API_BASE);
@@ -77,7 +78,8 @@ async function loadTracks(encodedPath, folderName) {
     currentTracks = items.filter(item => item.name.toLowerCase().endsWith(".mp3"));
     currentIndex = -1;
 
-    let html = `<button class="back-btn" onclick="loadFolders()">← 단원 목록으로</button><div class="track-list">`;
+    // '단원 목록으로' 대신 'Unit 목록으로'로 변경
+    let html = `<button class="back-btn" onclick="loadFolders()">← Unit 목록으로</button><div class="track-list">`;
     currentTracks.forEach((t, idx) => {
       const safeTrackName = t.name.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
       html += `<div class="track-item" id="track-${idx}" onclick="playTrack(${idx})"><span>🎵 ${safeTrackName}</span><span>▶</span></div>`;
